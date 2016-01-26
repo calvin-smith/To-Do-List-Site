@@ -1,0 +1,286 @@
+#%RAML 0.8
+---
+title: To-Do List API
+version: v1
+
+
+schemas:
+ - taskItem: !include taskItem.schema
+
+
+resourceTypes:
+ - taskCollection:
+	description: A collection of all user tasks
+	
+	get:
+		description: Get a list of all tasklists in the database
+			queryParameters:
+				task_list_ID:
+					displayName: Task_list_ID
+					type: number
+					description: The associated ID of a task list
+					required: true
+				user_ID:
+					displayName: User_ID
+					type: number
+					description: The user who created the task list
+					required: true
+				title:
+					displayName: Title
+					type: string
+					description: The title of the task list
+					required: true
+				access_token:
+					description: The access token provided by the authentication system
+					required: true
+					type: string
+		responses:
+			200:
+				body:
+					application/json:
+						example: |
+							{ 
+						    "data": {
+						        "Task_list_ID": "45",
+						        "User_ID": "16",
+						        "Title": "Finish up the house work",
+							},
+							"success": true,
+							"status": 200
+			            }
+						
+			404:
+				body:
+					application/json:
+						example: {"Task list not found"}	
+
+	post:
+		description: Create a new task collection
+			
+			queryParameters:
+				task_list_ID:
+					displayName: Task_list_ID
+					type: number
+					description: The associated ID of a task list
+					required: true
+				user_ID:
+					displayName: User_ID
+					type: number
+					description: The user who created the task list
+					required: true
+				title:
+					displayName: Title
+					type: string
+					description: The title of the task list
+					required: true
+				access_token:
+					description: The access token provided by the authentication system
+					required: true
+					type: string
+
+		body:
+			application/json:
+				schema: taskList
+	
+		responses:
+			200:
+				body:
+					application/json:
+						example: |
+							{ 
+						    "data": {
+						        "Task_list_ID": "45",
+						        "User_ID": "16",
+						        "Title": "Finish up the house work",
+							},
+							"success": true,
+							"status": 200
+			            }
+
+			404:
+				body:
+					application/json:
+						example: {"Task collection not found"}
+
+ - taskItem:
+	description: A user task
+	
+	get:
+		description: Get a user task
+			queryParameters:
+				task_ID:
+					displayName: Task_ID
+					type: number
+					description: The database number assigned to the task
+					required: true
+				task_list:
+					displayName: Task_List
+					type: number
+					description: The task list associated with a particular task
+					required: true
+				user_ID:
+					displayName: User_ID
+					type: number
+					description: The user who created the task list and task
+					required: true
+				task_Name
+					displayName: Task_Name
+					type: string
+					description: Name of the task
+					required: true
+				task_description
+					displayName: Task_Description
+					type: string
+					description: Describes the task in detail
+					required: false
+				completed:
+					displayName: Completed
+					type: boolean
+					description: Whether a task has been completed (0 for false, 1 for true)
+					required: true
+				access_token:
+					description: The access token provided by the authentication system
+					required: true
+					type: string
+				
+		responses:
+			200:
+				body:
+					application/json:
+						{ 
+							"data": {
+								"Task_ID": "36",
+								"Task_List": "3",
+								"User_ID": "1",
+								"Task_Name": "Get some groceries",
+								"Task_Description": "Milk and cookies are necessary for winter",
+								"Completed": "False",
+								},
+							"success": true,
+							"status": 200
+						}
+			404:
+				body:
+					application/json:
+						example: {"Task not found"}
+					
+	post:
+		description: Submit a user task
+			queryParameters:
+				task_Name
+					displayName: Task_Name
+					type: string
+					description: Name of the task
+					required: true
+				task_description
+					displayName: Task_Description
+					type: string
+					description: Describes the task in detail
+					required: false
+				completed:
+					displayName: Completed
+					type: boolean
+					description: Whether a task has been completed (0 for false, 1 for true)
+					required: false
+				access_token:
+					description: The access token provided by the authentication system
+					required: true
+					type: string
+			body:
+				application/json:
+					schema: task
+		responses:
+			200:
+				body:
+					application/json:
+						example: |
+						{ 
+							"data": {
+							"Task_Name": "Do the laundry",
+							"Task_Description": "Sort all of the clothing items",
+							"Completed": "False",
+							},
+							"success": true,
+							"status": 200
+						}
+		
+			404:
+				body:
+					application/json:
+						example: {"Task item not found"}
+
+traits:
+ - searchable:
+	queryParameters:
+		query:
+			description: JSON array [{"Task_ID","Task_List","User_ID","Task_Name","Completed","Task_Description"}]
+
+ - pageable:
+	queryParameters:
+		offset:
+			description: Skip over a number of task items
+			type: integer
+			required: false
+			example: 5
+			default: 5
+		limit:
+			description: Limit number of task items in a response
+			type: integer
+			required: false
+			example: 100
+			default: 100 
+
+/user:
+ displayName: Authenticated Users
+
+	/{userId}:
+	    displayName: User
+		uriParameters:
+          	userId:
+		   	displayName: User ID
+       		    	type: integer	
+		
+		get:
+			displayName: User	
+			description: Get a user by {userId}
+			type: number
+			example: '5' would return user 5
+			required: true
+
+		post:
+			queryParameters:
+				access_token:
+					displayName: Submit
+					description: Submit a new user
+					type: string 
+					example: first/last/username/password
+		
+		delete:
+			queryParameters:
+				access_token:
+					displayName: Delete
+					description: Delete a user
+					type: number
+					example: '5' would delete user 5	
+
+/task:
+	type:
+		collection:
+			exampleCollection: !include taskItems.sample
+			exampleItem: !include taskItem-new.sample
+	get:
+		is: [
+			searchable: {description: "With valid searchable fields: date, title, taskId"}
+			pageable	
+		]
+	
+	/{taskId}:
+		type:
+			collection-item:
+				exampleItem: !include taskItem-retrieve.sample
+		get:
+			responses:
+				200:
+					body:
+						application/json:
+							example: {"/task/{taskId}/Task_List/Task_Name/Task_Description"}
